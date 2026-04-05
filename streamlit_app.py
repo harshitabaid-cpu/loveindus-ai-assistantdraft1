@@ -2,12 +2,10 @@
 import streamlit as st
 from openai import OpenAI
 import os
-from dotenv import load_dotenv
 from scrape_products import scrape_products
 
-# Load API key from LI.env
-load_dotenv(dotenv_path="LI.env")
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Use Streamlit Secrets for API key
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 # Streamlit UI
 st.set_page_config(page_title="Love, Indus AI Assistant", page_icon="🛍️", layout="wide")
