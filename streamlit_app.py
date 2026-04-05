@@ -15,7 +15,6 @@ if api_key:
 # ---------------------------------------------------------
 st.set_page_config(page_title=f"{BRAND_NAME} Concierge", layout="centered")
 
-# Standard string used for CSS to avoid f-string curly brace errors
 st.markdown("""
 <style>
     /* Main Widget Container */
@@ -71,7 +70,7 @@ st.markdown("""
     
     .stHorizontalBlock {
         gap: 6px !important; 
-        margin-bottom: -32px !important; /* Pinned right above the input bar */
+        margin-bottom: -32px !important; 
         padding: 0 20px !important;
         justify-content: flex-start !important;
     }
@@ -101,7 +100,4 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def get_genius_reply(query, history):
-    context = f"Role: Elite {BRAND_NAME} Concierge. Tone: Sophisticated. Data: Dewy Skin Cream, Water Cream, Hadasei-3. Instructions: Short expert answers."
-    try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.
+    context
