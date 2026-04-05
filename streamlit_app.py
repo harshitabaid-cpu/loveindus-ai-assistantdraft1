@@ -70,12 +70,38 @@ st.markdown("""
     }
     
     .stHorizontalBlock {
-        gap: 4px !important; 
-        margin-bottom: -28px !important; /* Pulls them tight to the input box */
+        gap: 6px !important; 
+        margin-bottom: -32px !important; /* Pinned right above the input bar */
         padding: 0 20px !important;
         justify-content: flex-start !important;
     }
     
     div.stButton > button {
-        border-radius: 20px !
-    
+        border-radius: 20px !important;
+        border: 1px solid #DDD !important;
+        background: white !important;
+        padding: 2px 8px !important;
+        font-size: 16px !important;
+        height: auto !important;
+    }
+
+    /* INPUT BAR: Right Aligned Text & RTL for Cursor */
+    .stChatInputContainer textarea {
+        font-size: 20px !important;
+        text-align: right !important;
+        direction: rtl !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# 3. CONVERSATION LOGIC
+# ---------------------------------------------------------
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+def get_genius_reply(query, history):
+    context = f"Role: Elite {BRAND_NAME} Concierge. Tone: Sophisticated. Data: Dewy Skin Cream, Water Cream, Hadasei-3. Instructions: Short expert answers."
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.
