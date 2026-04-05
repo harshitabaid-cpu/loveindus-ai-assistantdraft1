@@ -1,62 +1,3 @@
-# streamlit_app.py
-import streamlit as st
-import os
-from scrape_products import scrape_products
-import google.generativeai as genai
-
-# -------------------------
-# Configure Gemini API
-# -------------------------
-genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
-
-# Optional debug: check if API key is loaded
-st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
-
-# -------------------------
-# Streamlit UI
-# -------------------------
-st.set_page_config(page_title="Love, Indus AI Assistant", page_icon="🛍️", layout="wide")
-st.title("🛍️ Love, Indus AI Sales Assistant")
-st.write("Get personalized product recommendations and explanations for Love, Indus products!")
-
-# Sidebar Quick Questions
-st.sidebar.header("Quick Questions")
-quick_qs = [
-    "Best product for glowing skin",
-    "Which product is suitable for dry skin?",
-    "Why is Amrutini Luminosity Dewdrops worth buying?",
-    "Explain Radiance Serum benefits"
-]
-selected_q = st.sidebar.radio("Choose a question:", [""] + quick_qs)
-
-# -------------------------
-# Load products
-# -------------------------
-with st.spinner("Fetching product info..."):
-    products = scrape_products()
-
-# -------------------------
-# User input
-# -------------------------
-user_input = st.text_input("Ask your question or describe your skin concern:")
-if selected_q:
-    user_input = selected_q
-
-# -------------------------
-# Build product context
-# -------------------------
-def get_product_context():
-    context = ""
-    for p in products:
-        context += f"""
-Product: {p['name']}
-Price: {p['price']}
-Description: {p['description']}
-Benefits: {', '.join(p['benefits']) if p['benefits'] else 'N/A'}
-Skin types: {', '.join(p['skin_type']) if p['skin_type'] else 'All'}
-"""
-    return context
-
 # -------------------------
 # Gemini AI response
 # -------------------------
@@ -79,16 +20,20 @@ User query:
 Answer conversationally with recommendation and reasoning.
 """
     try:
-        # Correct Gemini call for v0.8.6
-        response = genai.generate_text(
-            model="text-bison-001",
-            prompt=prompt,
-            temperature=0.7,
-            max_output_tokens=500
+        # 1. Initialize the correct Gemini model 
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        # 2. Call generate_content with the correct config syntax
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.GenerationConfig(
+                temperature=0.7,
+                max_output_tokens=500
+            )
         )
         return response.text if response.text else "⚠️ No response generated."
+        
     except Exception as e:
-        # Fallback with quick recommendations
         return f"""
 ⚠️ AI error occurred.
 
@@ -99,12 +44,3 @@ Quick recommendations:
 
 (Error: {str(e)})
 """
-
-# -------------------------
-# Display AI answer
-# -------------------------
-if st.button("Get Recommendation") and user_input:
-    with st.spinner("Thinking..."):
-        answer = get_ai_response(user_input)
-    st.markdown("### 🤖 AI Assistant Says:")
-    st.success(answer)
