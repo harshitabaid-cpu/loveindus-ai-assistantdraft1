@@ -11,7 +11,7 @@ if api_key:
     genai.configure(api_key=api_key)
 
 # ---------------------------------------------------------
-# 2. DESIGN EXPERT CSS (ULTRA-COMPACT & RIGHT-ALIGNED)
+# 2. DESIGN EXPERT CSS
 # ---------------------------------------------------------
 st.set_page_config(page_title=f"{BRAND_NAME} Concierge", layout="centered")
 
@@ -59,4 +59,23 @@ st.markdown("""
     [data-testid="stChatMessageAvatarUser"] { display: none !important; }
 
     /* Assistant: Left Aligned Text */
-    .assistant-text { font-size: 21px !important; line-height: 1
+    .assistant-text { font-size: 21px !important; line-height: 1.4; color: #1A1A1A; }
+
+    /* SUGGESTION CHIPS: Ultra-Compact & Right Above Input */
+    [data-testid="column"] {
+        width: fit-content !important;
+        flex: unset !important;
+        min-width: unset !important;
+        padding: 0 !important;
+    }
+    
+    .stHorizontalBlock {
+        gap: 4px !important; 
+        margin-bottom: -28px !important; /* Pulls them tight to the input box */
+        padding: 0 20px !important;
+        justify-content: flex-start !important;
+    }
+    
+    div.stButton > button {
+        border-radius: 20px !
+    
