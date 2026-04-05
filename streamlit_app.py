@@ -1,14 +1,18 @@
 # streamlit_app.py
 import streamlit as st
-import google.generativeai as genai
+st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
 import os
 from scrape_products import scrape_products
 
 # Configure Gemini
+import google.generativeai as genai
+import os
+
+# Load API key from Streamlit Secrets
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
-model = genai.GenerativeModel("gemini-1.5-flash")
-st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
+# Use a supported model for text generation
+model = genai.GenerativeModel("text-bison-001")st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
 # UI
 st.set_page_config(page_title="Love, Indus AI Assistant", page_icon="🛍️", layout="wide")
 st.title("🛍️ Love, Indus AI Sales Assistant")
@@ -47,7 +51,7 @@ Skin types: {', '.join(p['skin_type']) if p['skin_type'] else 'All'}
     return context
 
 # Gemini response
-def get_ai_response(query):
+dedef get_ai_response(query):
     prompt = f"""
 You are an expert Love, Indus skincare assistant.
 
@@ -65,16 +69,12 @@ User query:
 
 Answer conversationally with recommendation and reasoning.
 """
-
     try:
-        response = model.generate_content(prompt)
-
-        if response and hasattr(response, "text") and response.text:
-            return response.text
-        else:
-            return "⚠️ No response generated. Try again."
-
+        # Use generate_text for Gemini
+        response = model.generate_text(prompt)
+        return response.text if response.text else "⚠️ No response generated."
     except Exception as e:
+        # fallback message with actual error
         return f"""
 ⚠️ AI error occurred.
 
@@ -85,7 +85,6 @@ Quick recommendations:
 
 (Error: {str(e)})
 """
-
 # Output
 if st.button("Get Recommendation") and user_input:
     with st.spinner("Thinking..."):
