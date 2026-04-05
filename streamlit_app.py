@@ -1,26 +1,28 @@
 # streamlit_app.py
 import streamlit as st
-st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
 import os
 from scrape_products import scrape_products
-
-# Configure Gemini
 import google.generativeai as genai
-import os
 
-# Load API key from Streamlit Secrets
+# -------------------------
+# Configure Gemini
+# -------------------------
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
 # Use a supported model for text generation
 model = genai.GenerativeModel("text-bison-001")
 
+# Optional debug line to ensure API key loads
 st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
-# UI
+
+# -------------------------
+# Streamlit UI
+# -------------------------
 st.set_page_config(page_title="Love, Indus AI Assistant", page_icon="🛍️", layout="wide")
 st.title("🛍️ Love, Indus AI Sales Assistant")
 st.write("Get personalized product recommendations and explanations for Love, Indus products!")
 
-# Sidebar
+# Sidebar Quick Questions
 st.sidebar.header("Quick Questions")
 quick_qs = [
     "Best product for glowing skin",
@@ -30,16 +32,22 @@ quick_qs = [
 ]
 selected_q = st.sidebar.radio("Choose a question:", [""] + quick_qs)
 
-# Load products
+# -------------------------
+# Load Products
+# -------------------------
 with st.spinner("Fetching product info..."):
     products = scrape_products()
 
-# Input
+# -------------------------
+# User Input
+# -------------------------
 user_input = st.text_input("Ask your question or describe your skin concern:")
 if selected_q:
     user_input = selected_q
 
-# Build context
+# -------------------------
+# Build product context
+# -------------------------
 def get_product_context():
     context = ""
     for p in products:
@@ -52,8 +60,10 @@ Skin types: {', '.join(p['skin_type']) if p['skin_type'] else 'All'}
 """
     return context
 
-# Gemini response
-dedef get_ai_response(query):
+# -------------------------
+# Gemini AI response
+# -------------------------
+def get_ai_response(query):
     prompt = f"""
 You are an expert Love, Indus skincare assistant.
 
@@ -76,7 +86,7 @@ Answer conversationally with recommendation and reasoning.
         response = model.generate_text(prompt)
         return response.text if response.text else "⚠️ No response generated."
     except Exception as e:
-        # fallback message with actual error
+        # Fallback message with actual error
         return f"""
 ⚠️ AI error occurred.
 
@@ -87,7 +97,10 @@ Quick recommendations:
 
 (Error: {str(e)})
 """
-# Output
+
+# -------------------------
+# Display AI answer
+# -------------------------
 if st.button("Get Recommendation") and user_input:
     with st.spinner("Thinking..."):
         answer = get_ai_response(user_input)
