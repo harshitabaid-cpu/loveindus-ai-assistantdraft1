@@ -79,13 +79,9 @@ User query:
 Answer conversationally with recommendation and reasoning.
 """
     try:
-        # Correct Gemini call using generate_text()
-        response = genai.generate_text(
-            model="text-bison-001",
-            prompt=prompt,
-            temperature=0.7,
-            max_output_tokens=500
-        )
+        # New Gemini call using TextGenerationModel
+        model = genai.TextGenerationModel.from_pretrained("text-bison-001")
+        response = model.predict(prompt, temperature=0.7, max_output_tokens=500)
         return response.text if response.text else "⚠️ No response generated."
     except Exception as e:
         return f"""
