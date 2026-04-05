@@ -2,107 +2,75 @@
 import streamlit as st
 import os
 import google.generativeai as genai
+from scrape_products import scrape_products # 🔗 Connecting your scraper!
 
 # -------------------------
-# Streamlit UI Setup (Must be first Streamlit command)
+# Streamlit UI Setup
 # -------------------------
-st.set_page_config(page_title="Tatcha AI Assistant", page_icon="💜", layout="wide")
-st.title("💜 Tatcha AI Sales Assistant")
-st.write("Discover your ritual with personalized recommendations for Tatcha's Japanese botanical skincare!")
+st.set_page_config(page_title="Clinical AI Assistant", page_icon="🧪", layout="wide")
+st.title("🧪 Clinical Skincare Expert & Sales Assistant")
+st.write("Expert advice, routine building, and safe ingredient pairing.")
 
 # -------------------------
-# Configure Gemini API Safely
+# Configure Gemini API
 # -------------------------
 api_key = os.environ.get("GOOGLE_API_KEY")
-
 if api_key:
     genai.configure(api_key=api_key)
     st.sidebar.success("API KEY LOADED: YES")
 else:
     st.sidebar.error("API KEY LOADED: NO. Please set your GOOGLE_API_KEY environment variable.")
 
-# Sidebar Quick Questions
-st.sidebar.header("Quick Questions")
-quick_qs = [
-    "Difference between Water Cream and Dewy Skin Cream?",
-    "What is the best cleanser for dry skin?",
-    "What is Hadasei-3 and why is it important?",
-    "Which product is best for minimizing pores?"
-]
-selected_q = st.sidebar.radio("Choose a question:", [""] + quick_qs)
+# -------------------------
+# Load products (With Caching!)
+# -------------------------
+# We use session_state so it only scrapes ONCE when you load the app
+with st.spinner("Fetching clinical data & conflict charts..."):
+    if "products" not in st.session_state:
+        st.session_state.products = scrape_products()
+    products = st.session_state.products
 
 # -------------------------
-# Load products (SAFE MODE: Bypassing the scraper temporarily)
-# -------------------------
-# from scrape_products import scrape_products  <-- Commented out for now!
-with st.spinner("Fetching product info..."):
-    # Using Tatcha dummy data to test the new brand persona
-    products = [
-        {
-            "name": "The Dewy Skin Cream",
-            "price": "$72.00",
-            "description": "A rich, moisturizing cream with plumping hydration and antioxidant-packed Japanese purple rice for a dewy, healthy glow.",
-            "benefits": ["Intense hydration", "Dewy glow", "Plumping", "Antioxidant protection"],
-            "skin_type": ["Dry", "Normal"]
-        },
-        {
-            "name": "The Water Cream",
-            "price": "$72.00",
-            "description": "An oil-free, clarifying water cream that releases a burst of hydrating nutrients and pore-refining Japanese wild rose.",
-            "benefits": ["Lightweight hydration", "Pore refining", "Balancing", "Shine control"],
-            "skin_type": ["Oily", "Combination"]
-        },
-        {
-            "name": "The Rice Wash",
-            "price": "$40.00",
-            "description": "A gently effective, cream cleanser that washes away impurities without stripping skin, leaving a luminous finish.",
-            "benefits": ["Gentle cleansing", "Softening", "Luminous finish", "pH balancing"],
-            "skin_type": ["All", "Dry", "Combination"]
-        }
-    ]
-
-# -------------------------
-# User input
-# -------------------------
-user_input = st.text_input("Ask your question or describe your skin concern:")
-if selected_q:
-    user_input = selected_q
-
-# -------------------------
-# Build product context
+# Build Deep Product Context
 # -------------------------
 def get_product_context():
     context = ""
     for p in products:
         context += f"""
-Product: {p['name']}
-Price: {p['price']}
-Description: {p['description']}
-Benefits: {', '.join(p['benefits']) if p['benefits'] else 'N/A'}
-Skin types: {', '.join(p['skin_type']) if p['skin_type'] else 'All'}
+Product: {p.get('name', 'Unknown')}
+Price: {p.get('price', 'N/A')}
+Description: {p.get('description', 'N/A')}
+Key Ingredients: {p.get('key_ingredients', 'N/A')}
+How to Use: {p.get('how_to_use', 'N/A')}
+Conflicts & Warnings: {p.get('conflicts', 'None listed')}
+---
 """
     return context
 
 # -------------------------
-# Gemini AI response
+# The "Genius" AI Logic
 # -------------------------
 def get_ai_response(query):
     if not api_key:
         return "⚠️ Please add your Google API Key to use the assistant."
         
     prompt = f"""
-You are an expert, luxurious skincare assistant for Tatcha.
+You are an elite, highly knowledgeable Skincare Sales Consultant. 
 
-Goals:
-- Recommend products based on the user's skin type or concern.
-- Explain product benefits, highlighting Japanese botanicals where applicable.
-- Adopt a calm, educational, mindful, and premium tone.
-- Keep responses concise but highly informative.
-
-Product data:
+YOUR DATA SOURCE:
 {get_product_context()}
 
-User query:
+YOUR CORE DIRECTIVES:
+1. MULTI-TASKING: The user may ask multiple questions at once. Break down your response using clear bullet points or bold text to ensure NO part of their query is ignored.
+2. SAFETY & EXPERTISE FIRST: Always check the "Conflicts & Warnings" data. If a user asks about combining incompatible ingredients, strictly warn them and explain the science of why they shouldn't mix them.
+3. SALES PSYCHOLOGY (The Consultative Close):
+   - Acknowledge & Validate: Briefly validate their specific skin concern.
+   - Educate: Recommend a product and explain *why* the 'Key Ingredients' solve their problem.
+   - The Gentle Upsell: Always suggest a complementary product to build a routine (e.g., if recommending an exfoliator, suggest a hydrating serum for barrier support).
+   - Value Proposition: Casually mention the accessible 'Price' to eliminate cost objections.
+4. TONE: Clinical, deeply empathetic, highly professional, and persuasive but never "pushy".
+
+USER QUERY:
 {query}
 """
     try:
@@ -110,8 +78,8 @@ User query:
         response = model.generate_content(
             prompt,
             generation_config=genai.GenerationConfig(
-                temperature=0.7,
-                max_output_tokens=500
+                temperature=0.7, # 0.7 keeps it creative for sales, but logical for science
+                max_output_tokens=800 # Increased so it has room to answer complex, multi-part questions
             )
         )
         return response.text if response.text else "⚠️ No response generated."
@@ -119,10 +87,16 @@ User query:
         return f"⚠️ AI error occurred: {str(e)}"
 
 # -------------------------
-# Display AI answer
+# User Input & UI
 # -------------------------
-if st.button("Get Recommendation") and user_input:
-    with st.spinner("Consulting the ritual..."):
-        answer = get_ai_response(user_input)
-    st.markdown("### 💜 Tatcha Assistant Says:")
-    st.info(answer)
+# Using a larger text area so users can type complex, multi-part questions
+user_input = st.text_area("Ask me multiple questions, ask about building a routine, or check ingredient conflicts:", height=100)
+
+if st.button("Consult Expert"):
+    if user_input:
+        with st.spinner("Analyzing formulation data and building response..."):
+            answer = get_ai_response(user_input)
+        st.markdown("### 🧪 Expert Consultation:")
+        st.info(answer)
+    else:
+        st.warning("Please type a question first.")
