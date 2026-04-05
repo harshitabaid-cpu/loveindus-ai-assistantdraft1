@@ -4,220 +4,186 @@ import google.generativeai as genai
 from datetime import datetime
 
 # ---------------------------------------------------------
-# CONFIGURATION: CHANGE BRAND DATA HERE
+# 1. BRAND ASSETS & GENIUS BRAIN CONFIG
 # ---------------------------------------------------------
-BRAND_NAME = "Tatcha" 
-BRAND_LOGO_CDN = "https://tatcha.com/on/demandware.static/-/Library-Sites-TatchaSharedLibrary/default/dw106093d5/images/logo-black.png"
-ACCENT_COLOR = "#613082" # Tatcha Purple
+BRAND_NAME = "Tatcha"
+# Using a high-quality verified logo URL
+BRAND_LOGO = "https://www.tatcha.com/on/demandware.static/-/Library-Sites-TatchaSharedLibrary/default/dw106093d5/images/logo-black.png"
+ACCENT_COLOR = "#613082" 
+
+api_key = os.environ.get("GOOGLE_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
 
 # ---------------------------------------------------------
-# UI SETUP & POLISHED CSS
+# 2. DESIGN EXPERT CSS (Fixing Overlaps & Layout)
 # ---------------------------------------------------------
-# Constraining width to create a focused widget feel.
 st.set_page_config(page_title=f"{BRAND_NAME} Concierge", layout="centered")
 
-# Custom indentation and indents are vital for triple-quoted strings.
 st.markdown(f"""
 <style>
-    /* 1. Main Widget Container (Glassmorphism Effect) */
-    [data-testid="stVerticalBlock"] > div:has(div.ritual-widget) {{
-        max-width: 440px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    /* Global Widget Styling */
+    [data-testid="stVerticalBlock"] > div:has(div.rep-clone) {{
+        max-width: 450px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
         margin: auto;
         overflow: hidden;
-        border: 1px solid #EAEAEA;
-        padding: 0;
+        border: 1px solid #F0F0F0;
     }}
 
-    /* 2. THE HEADER (High-Contrast & Large Fonts) */
-    .ritual-header {{
+    /* FIXED HEADER: No overlapping */
+    .rep-header {{
         background-color: #000000;
         color: white;
-        padding: 25px 20px; /* Increased padding */
+        padding: 20px 25px;
         display: flex;
         align-items: center;
-        width: 100%;
+        justify-content: space-between; /* Keeps text left, icons right */
     }}
-    .header-left-group {{ display: flex; align-items: center; }}
-    .brand-avatar {{
-        width: 50px; height: 50px; background: white; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center; margin-right: 18px;
+    .header-left {{ display: flex; align-items: center; flex: 1; }}
+    .logo-container {{
+        width: 55px; height: 55px; 
+        background: white; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin-right: 15px; flex-shrink: 0;
     }}
-    .header-titles h3 {{ 
-        margin: 0; font-size: 22px !important; font-weight: 400; color: white; /* Large Headline */
+    .header-text-group {{ display: flex; flex-direction: column; }}
+    .header-text-group h3 {{ 
+        margin: 0; font-size: 20px; font-weight: 500; color: white; line-height: 1.2;
     }}
-    .header-titles p {{ 
-        margin: 0; font-size: 16px !important; color: #BBB; margin-top: 4px; /* Large Subtitle */
+    .header-text-group p {{ 
+        margin: 0; font-size: 14px; color: #AAA; font-weight: 300;
     }}
+    .header-icons {{ display: flex; gap: 15px; opacity: 0.8; font-size: 18px; cursor: pointer; }}
 
-    /* 3. The Conversation Greet & Starters Layout */
-    .greet-and-start {{
-        padding: 25px;
-        border-bottom: 1px solid #F0F0F0;
-    }}
-    .tatcha-greet {{
-        font-family: 'Times New Roman', Times, serif; /* Brand Serif feel */
-        font-size: 19px; color: #1A1A1A; line-height: 1.4;
-    }}
-
-    /* Simplified Indentation for Pill Button Layout */
-    .stColumn {{
-        padding: 0 5px !important;
+    /* SUGGESTION CHIPS (Suggested Response Options) */
+    .chip-container {{
+        display: flex; flex-wrap: wrap; gap: 8px; padding: 15px 25px;
     }}
     div.stButton > button {{
-        border-radius: 30px !important; /* Perfect Pill */
-        border: 1px solid #D1D1D1 !important;
+        border-radius: 20px !important;
+        border: 1px solid #E0E0E0 !important;
         background: white !important;
-        color: #1A1A1A !important;
-        font-size: 14px !important;
-        width: 100%;
-        text-align: left;
-        padding: 10px 20px !important;
-        margin-bottom: 5px;
+        color: #444 !important;
+        font-size: 13px !important;
+        transition: 0.2s;
     }}
     div.stButton > button:hover {{
         border-color: {ACCENT_COLOR} !important;
         color: {ACCENT_COLOR} !important;
     }}
 
-    /* 4. Chat Area and Indentation */
-    .stChatMessage {{ background: transparent !important; border: none !important; padding-top: 15px; }}
-    [data-testid="stChatMessage"] div.stMarkdown {{
-        background-color: rgba(97, 48, 130, 0.05); /* Soft purple tint */
-        padding: 10px 15px; border-radius: 10px;
+    /* CHAT BUBBLES */
+    [data-testid="stChatMessage"] {{
+        background: transparent !important;
+        padding: 10px 20px !important;
     }}
-    .timestamp {{ font-size: 10px; color: #BBB; float: right; margin-top: -10px; padding-right: 10px; }}
-
-    /* 5. Pill Input Pinned to Bottom */
     .stChatInputContainer {{
         border-radius: 30px !important;
-        background-color: #F8F9FA !important;
-        border: 1.5px solid #E0E0E0 !important;
-        margin: 15px;
-    }}
-    .stChatInputContainer:focus-within {{
-        border-color: {ACCENT_COLOR} !important;
+        background: #F4F4F7 !important;
+        border: 1px solid #E0E0E0 !important;
+        margin: 10px 20px 25px 20px !important;
     }}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# WIDGET CONSTRUCTION
-# ---------------------------------------------------------
-# A unique class to allow our CSS to target the entire container.
-st.markdown("<div class='ritual-widget'>", unsafe_allow_html=True)
-
-# --- THE HEADER INJECTION ---
-# Pulling the brand logo and centering it with HTML/CSS
-st.markdown(f"""
-<div class="ritual-header">
-    <div class="header-left-group">
-        <div class="brand-avatar">
-            <img src="{BRAND_LOGO_CDN}" width="35" alt="Tatcha Logo">
-        </div>
-        <div class="header-titles">
-            <h3>{BRAND_NAME} Concierge</h3>
-            <p>Here to help you shop</p>
-        </div>
-    </div>
-    <div style="font-size: 20px; color: white; opacity: 0.6;">⤢ &nbsp; ✕</div>
-</div>
-""", unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# CONFIG & GENIUS BRAIN
-# ---------------------------------------------------------
-# Ensure indentation for the configuration block is standardized.
-api_key = os.environ.get("GOOGLE_API_KEY")
-if api_key: genai.configure(api_key=api_key)
-
-def get_polished_response(prompt, history):
-    """Refined tone for the communication specialist's validation."""
-    context = f"""
-    You are the 'ritual consultant' for {BRAND_NAME}. 
-    Use a calm, empathetic, mindful, and high-end Japanese beauty tone. 
-    Never use aggressive sales language. 
-    When discussing The Dewy Skin Cream, mention Japanese Purple Rice for hydration. 
-    When discussing Hadasei-3™, mention Rice, Algae, and Green Tea as anti-aging superfoods.
-    End with a considerate, consultative question.
-    """
-    try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        # History is injected here for continuity.
-        response = model.generate_content(f"{context} \n {history} \n User Query: {prompt}")
-        return response.text
-    except:
-        return "I am currently consulting our archives. Please allow me a moment to restore balance to your query."
-
-# ---------------------------------------------------------
-# CONVERSATION FLOW (Memory)
+# 3. CONVERSATION LOGIC
 # ---------------------------------------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# --- GREET & STARTERS BLOCK (If chat is empty) ---
-# Fixing the layout and the communication tone.
-if not st.session_state.messages:
-    # Acknowledge the indents for nested HTML blocks.
-    st.markdown("<div class='greet-and-start'>", unsafe_allow_html=True)
-    
-    # 1. Empathetic Communication Specialist Opening
-    st.markdown("""
-    <p class="tatcha-greet">
-    Welcome to Tatcha. Find your beginning, and let us guide you.
-    <br><br>
-    Our botanical archives are open. Tell us about your skin’s journey, or allow us to recommend a ritual starter:
-    </p>
-    """, unsafe_allow_html=True)
+def get_genius_reply(query, history):
+    context = f"""
+    Role: Elite {BRAND_NAME} Concierge.
+    Tone: Sophisticated, warm, mindful, Japanese-inspired.
+    Instructions: Give short, expert answers. Always mention the specific superfoods (Hadasei-3). 
+    IMPORTANT: End your response by offering two specific paths (e.g. 'Would you like to know the ritual or see the results?')
+    """
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        full_prompt = f"{context}\nHistory: {history}\nUser: {query}"
+        response = model.generate_content(full_prompt)
+        return response.text
+    except Exception:
+        return "I am currently refining our botanical archives. How may I assist your skin's journey today?"
 
-    # 2. Corrected Starter Layout (Centered Columns)
-    st.write("") # Spacer
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("💜 Is my skin Dewy or Water?"):
-            st.session_state.messages.append({"role": "user", "content": "I'm unsure if my skin needs The Dewy Skin Cream or The Water Cream."})
-            st.rerun()
-    with c2:
-        if st.button("✨ What is the Hadasei-3 ritual?"):
-            st.session_state.messages.append({"role": "user", "content": "Explain Tatcha's signature Hadasei-3 complex and why it is special."})
-            st.rerun()
-    
-    st.markdown("<div style='text-align: center; width: 100%;'>", unsafe_allow_html=True)
-    if st.button("☁️ The Rice Cleansing Ritual", key="quick_c3"):
-        st.session_state.messages.append({"role": "user", "content": "Which Tatcha Rice cleanser is best for me?"})
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True) # Closing greet block
+# ---------------------------------------------------------
+# 4. THE WIDGET UI
+# ---------------------------------------------------------
+st.markdown("<div class='rep-clone'>", unsafe_allow_html=True)
 
-# --- Chat Display Area ---
-chat_area = st.container(height=450, border=False)
-with chat_area:
+# HEADER
+st.markdown(f"""
+<div class="rep-header">
+    <div class="header-left">
+        <div class="logo-container">
+            <img src="{BRAND_LOGO}" width="35">
+        </div>
+        <div class="header-text-group">
+            <h3>{BRAND_NAME} Concierge</h3>
+            <p>Here to help you shop</p>
+        </div>
+    </div>
+    <div class="header-icons">
+        <span>⤢</span>
+        <span onclick="window.location.reload()">✕</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# CHAT AREA
+chat_placeholder = st.container(height=450, border=False)
+
+with chat_placeholder:
+    if not st.session_state.messages:
+        # BRANDED WARM OPENING
+        st.markdown(f"""
+        <div style='padding: 20px; font-size: 17px; color: #333; font-family: serif;'>
+        Good afternoon. Welcome to {BRAND_NAME}. <br><br>
+        Find your beginning, and let us guide you. How shall we refine your ritual today?
+        </div>
+        """, unsafe_allow_html=True)
+    
     for m in st.session_state.messages:
-        # Standardize indents for nested control flow.
-        # Showing the brand logo in bot replies
-        avatar = BRAND_LOGO_CDN if m["role"] == "assistant" else None
+        avatar = BRAND_LOGO if m["role"] == "assistant" else None
         with st.chat_message(m["role"], avatar=avatar):
             st.markdown(m["content"])
-            # Timestamp Indentation
-            st.markdown(f"<div class='timestamp'>{datetime.now().strftime('%H:%M %p')}</div>", unsafe_allow_html=True)
 
-# --- PILL INPUT & PROCESSING ---
+# DYNAMIC SUGGESTION OPTIONS (Conversation Continuing)
+st.markdown("<div class='chip-container'>", unsafe_allow_html=True)
+cols = st.columns([1, 1, 1])
+if not st.session_state.messages:
+    if cols[0].button("💜 Dewy vs Water?"):
+        st.session_state.messages.append({"role": "user", "content": "What is the difference between Dewy and Water cream?"})
+        st.rerun()
+    if cols[1].button("☁️ The Rice Wash?"):
+        st.session_state.messages.append({"role": "user", "content": "Tell me about the Rice Cleansing Ritual."})
+        st.rerun()
+    if cols[2].button("✨ Hadasei-3?"):
+        st.session_state.messages.append({"role": "user", "content": "What is the Hadasei-3 complex?"})
+        st.rerun()
+else:
+    # Post-conversation chips to keep them shopping
+    if cols[0].button("🛍️ View Rituals"):
+        st.session_state.messages.append({"role": "user", "content": "Show me the full ritual sets."})
+        st.rerun()
+    if cols[1].button("🧴 Check Ingredients"):
+        st.session_state.messages.append({"role": "user", "content": "I want to see the key ingredients again."})
+        st.rerun()
+st.markdown("</div>", unsafe_allow_html=True)
+
+# INPUT BAR
 if prompt := st.chat_input("How may we assist your ritual today?"):
-    # Indentation for user message logic block
     st.session_state.messages.append({"role": "user", "content": prompt})
-    # Page Reruns to update the chat area with the user message immediately.
-    
-    # Indentation for bot message logic block
-    with chat_area:
-        with st.chat_message("assistant", avatar=BRAND_LOGO_CDN):
-            with st.spinner("Consulting the archives..."):
-                full_response = get_polished_response(prompt, st.session_state.messages[:-1])
-                st.markdown(full_response)
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
+    with chat_placeholder:
+        with st.chat_message("assistant", avatar=BRAND_LOGO):
+            with st.spinner("Consulting..."):
+                reply = get_genius_reply(prompt, st.session_state.messages[:-1])
+                st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
     st.rerun()
 
-# No "Powered by REP" footer for this polished demo.
-st.markdown("</div>", unsafe_allow_html=True) # Closing widget block
+st.markdown("</div>", unsafe_allow_html=True)
