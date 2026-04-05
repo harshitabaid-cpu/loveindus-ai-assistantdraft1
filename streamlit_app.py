@@ -11,7 +11,7 @@ if api_key:
     genai.configure(api_key=api_key)
 
 # ---------------------------------------------------------
-# 2. DESIGN EXPERT CSS (1.5x FONT & ALIGNMENT)
+# 2. DESIGN EXPERT CSS (SLIM CHATBOX & 1.5x FONT)
 # ---------------------------------------------------------
 st.set_page_config(page_title=f"{BRAND_NAME} Concierge", layout="centered")
 
@@ -19,10 +19,10 @@ st.markdown(f"""
 <style>
     /* Main Widget Container */
     [data-testid="stVerticalBlock"] > div:has(div.luxury-widget) {{
-        max-width: 550px;
+        max-width: 480px;
         background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         margin: auto;
         overflow: hidden;
         border: 1px solid #EDEDED;
@@ -30,30 +30,31 @@ st.markdown(f"""
         flex-direction: column;
     }}
 
-    /* HEADER: 1.5x FONT & NO LOGO */
+    /* SLIM HEADER: Compact and Professional */
     .rep-header {{
         background-color: #000000;
         color: white;
-        padding: 40px 30px;
+        padding: 15px 20px; /* Reduced padding for slim look */
         display: flex;
         align-items: center;
         justify-content: space-between;
     }}
     .header-titles h3 {{ 
-        margin: 0; font-size: 36px !important; font-weight: 500; color: white; 
+        margin: 0; font-size: 28px !important; font-weight: 500; color: white; 
     }}
     .header-titles p {{ 
-        margin: 0; font-size: 22px !important; color: #AAA; font-weight: 300;
+        margin: 0; font-size: 18px !important; color: #AAA; font-weight: 300;
     }}
-    .header-icons {{ display: flex; gap: 25px; font-size: 30px; opacity: 0.8; }}
+    .header-icons {{ display: flex; gap: 15px; font-size: 22px; opacity: 0.8; }}
 
     /* MESSAGE ALIGNMENT & 1.5x FONT */
     [data-testid="stChatMessage"] {{
         font-size: 21px !important;
         background: transparent !important;
+        padding: 5px 20px !important;
     }}
     
-    /* User: Right Aligned, No Icon */
+    /* User: Force Right Alignment */
     [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{
         flex-direction: row-reverse !important;
         text-align: right !important;
@@ -62,34 +63,33 @@ st.markdown(f"""
         display: none !important;
     }}
 
-    /* Assistant: Left Aligned, Large Text */
+    /* Assistant: Left Aligned with Large Text */
     .assistant-text {{
         font-size: 21px !important;
-        line-height: 1.6;
+        line-height: 1.4;
         color: #1A1A1A;
     }}
 
-    /* SUGGESTED REPLIES (Bottom Most, Tight Spacing) */
+    /* SUGGESTED REPLIES (Tight Spacing & Pinned to bottom) */
     .bottom-starters {{
-        padding: 10px 30px;
+        padding: 0px 20px 10px 20px;
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px !important; /* Reduced gap */
         justify-content: flex-start;
+        flex-wrap: wrap;
     }}
     div.stButton > button {{
-        border-radius: 30px !important;
-        border: 1px solid #CCC !important;
+        border-radius: 20px !important;
+        border: 1px solid #DDD !important;
         background: white !important;
-        padding: 8px 20px !important;
-        font-size: 20px !important; /* 1.5x larger */
-        transition: 0.3s;
+        padding: 4px 12px !important;
+        font-size: 18px !important;
+        margin: 0 !important;
     }}
 
-    /* INPUT BAR: 1.5x FONT */
+    /* INPUT BAR: Professional Scale */
     .stChatInputContainer textarea {{
-        font-size: 22px !important;
-        padding: 15px !important;
+        font-size: 20px !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -101,20 +101,20 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def get_genius_reply(query, history):
-    context = f"Role: Elite {BRAND_NAME} Concierge. Tone: Sophisticated Japanese luxury. Data: Dewy Skin Cream ($72), Water Cream ($72), Hadasei-3 trinity. Instructions: Expert, short, warm answers."
+    context = f"Role: Elite {BRAND_NAME} Concierge. Tone: Sophisticated. Data: Dewy Skin Cream ($72), Water Cream ($72), Hadasei-3. Instructions: Short expert answers."
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(f"{context}\nHistory: {history}\nUser: {query}")
         return response.text
     except:
-        return "Our botanical experts are refining the archives. How may I assist your ritual journey?"
+        return "I am refining our ritual archives. How may I assist your skin today?"
 
 # ---------------------------------------------------------
 # 4. THE UI WIDGET
 # ---------------------------------------------------------
 st.markdown("<div class='luxury-widget'>", unsafe_allow_html=True)
 
-# HEADER
+# SLIM HEADER
 st.markdown(f"""
 <div class="rep-header">
     <div class="header-titles">
@@ -128,25 +128,23 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Function to reset conversation (linked to a button inside the widget for stability)
-if st.button("Reset Conversation", use_container_width=True):
-    st.session_state.messages = []
-    st.rerun()
-
 # CHAT HISTORY
-chat_area = st.container(height=450, border=False)
+chat_area = st.container(height=420, border=False)
 with chat_area:
+    if not st.session_state.messages:
+        st.markdown("<div style='font-size:20px; padding:20px; color:#555;'>Good afternoon. How shall we refine your ritual today?</div>", unsafe_allow_html=True)
+    
     for m in st.session_state.messages:
         if m["role"] == "user":
             with st.chat_message("user", avatar=None):
-                st.markdown(m["content"])
+                st.markdown(f"<div style='font-size:21px;'>{m['content']}</div>", unsafe_allow_html=True)
         else:
             with st.chat_message("assistant", avatar="✨"):
                 st.markdown(f"<div class='assistant-text'>{m['content']}</div>", unsafe_allow_html=True)
 
-# SUGGESTED REPLIES (Pinned to bottom-most)
+# SUGGESTED REPLIES (Tight Spacing)
 st.markdown("<div class='bottom-starters'>", unsafe_allow_html=True)
-c1, c2, c3 = st.columns([1, 1, 1])
+c1, c2, c3 = st.columns([1.1, 1, 1])
 with c1:
     if st.button("💜 Dewy vs Water?"):
         st.session_state.messages.append({"role": "user", "content": "What is the difference between Dewy and Water cream?"})
