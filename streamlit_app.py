@@ -100,4 +100,70 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def get_genius_reply(query, history):
-    context
+    context = f"Role: Elite {BRAND_NAME} Concierge. Tone: Sophisticated. Data: Dewy Skin Cream, Water Cream, Hadasei-3. Instructions: Short expert answers."
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Format history for context
+        history_text = "\n".join([f"{m['role']}: {m['content']}" for m in history])
+        # FIX: Added the missing generate_content method call
+        response = model.generate_content(f"{context}\n{history_text}\nUser: {query}")
+        return response.text
+    except Exception:
+        return "Our botanical experts are currently refining the archives. How may I assist your skin today?"
+
+# ---------------------------------------------------------
+# 4. THE UI WIDGET
+# ---------------------------------------------------------
+st.markdown("<div class='luxury-widget'>", unsafe_allow_html=True)
+
+# HEADER
+st.markdown(f"""
+<div class="rep-header">
+    <div class="header-titles">
+        <h3>{BRAND_NAME} Concierge</h3>
+        <p>Here to help you shop</p>
+    </div>
+    <div class="header-icons"><span>⤢</span><span>✕</span></div>
+</div>
+""", unsafe_allow_html=True)
+
+# CHAT HISTORY
+chat_area = st.container(height=450, border=False)
+with chat_area:
+    if not st.session_state.messages:
+        st.markdown("<div style='font-size:20px; padding:20px; color:#555;'>Good afternoon. How shall we refine your ritual today?</div>", unsafe_allow_html=True)
+    
+    for m in st.session_state.messages:
+        if m["role"] == "user":
+            with st.chat_message("user", avatar=None):
+                st.markdown(f"<div style='font-size:21px;'>{m['content']}</div>", unsafe_allow_html=True)
+        else:
+            with st.chat_message("assistant", avatar="✨"):
+                st.markdown(f"<div class='assistant-text'>{m['content']}</div>", unsafe_allow_html=True)
+
+# COMPACT SUGGESTED REPLIES
+c1, c2, c3 = st.columns([0.33, 0.33, 0.33])
+with c1:
+    if st.button("💜 Dewy vs Water?"):
+        st.session_state.messages.append({"role": "user", "content": "Difference between Dewy and Water?"})
+        st.rerun()
+with c2:
+    if st.button("☁️ Rice Wash?"):
+        st.session_state.messages.append({"role": "user", "content": "Tell me about Rice Wash."})
+        st.rerun()
+with c3:
+    if st.button("✨ Hadasei-3?"):
+        st.session_state.messages.append({"role": "user", "content": "What is Hadasei-3?"})
+        st.rerun()
+
+# INPUT BAR
+if prompt := st.chat_input("How may we assist your ritual today?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with chat_area:
+        with st.chat_message("assistant", avatar="✨"):
+            reply = get_genius_reply(prompt, st.session_state.messages[:-1])
+            st.markdown(f"<div class='assistant-text'>{reply}</div>", unsafe_allow_html=True)
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.rerun()
+
+st.markdown("</div>", unsafe_allow_html=True)
