@@ -3,133 +3,216 @@ import os
 import google.generativeai as genai
 
 # -------------------------
-# 1. FLAGSHIP LUXURY CSS
+# 1. PAGE SETUP & CORE UI STYLING
 # -------------------------
-st.set_page_config(page_title="Tatcha Ritual Consultant", page_icon="💜", layout="wide")
+# We use 'centered' to constrain the app like a widget, not full width.
+st.set_page_config(page_title="Luxe Concierge", page_icon="✨", layout="centered")
 
+# --- CUSTOM CSS: Replicating the Screenshot & L'Oréal Aesthetic ---
 st.markdown("""
 <style>
-    .stApp { background-color: #FFFFFF; }
-    .product-box {
-        background: #FFF;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        border: 1px solid #F0F0F0;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    /* 1. Overall Background */
+    .stApp {
+        background: #F8F9FA;
     }
-    .price-tag { color: #613082; font-weight: 600; font-family: 'Inter', sans-serif; }
-    [data-testid="stChatMessage"] { border-radius: 15px; }
+    
+    /* 2. Constraining the app to feel like a widget */
+    div.block-container {
+        max-width: 500px;
+        padding: 0;
+        border: 1px solid #EDEDED;
+        border-radius: 20px;
+        background: white;
+        margin-top: 50px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+        overflow: hidden; /* Important for rounded corners */
+    }
+
+    /* 3. The Top Header Bar (from image) */
+    .chat-header {
+        background-color: #6D6D6D; /* The specific dark gray from screenshot */
+        color: white;
+        padding: 20px 25px;
+        display: flex;
+        align-items: center;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+    }
+    .header-text {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        margin-left: 15px;
+    }
+    .header-text h3 { margin: 0; color: white; font-weight: 500; font-size: 18px; }
+    .header-text p { margin: 0; color: #EDEDED; font-size: 13px; font-weight: 300; }
+
+    /* 4. Product Card Styling (Minimalist) */
+    [data-testid="stColumn"] {
+        padding: 0 20px;
+    }
+    .product-details {
+        text-align: left;
+        padding: 20px 0;
+    }
+    .product-name {
+        font-family: 'Helvetica Neue', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        color: #1A1A1A;
+        margin-bottom: 10px;
+    }
+    .product-price {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1A1A1A;
+        margin-bottom: 20px;
+    }
+
+    /* 5. Modern Button Styling (Rounded & Outline) */
+    .stButton > button {
+        width: 100%;
+        border-radius: 30px;
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: normal;
+        margin-bottom: 10px;
+    }
+    /* "Learn More" (Outline style) */
+    .outline-button button {
+        background-color: white !important;
+        color: #1A1A1A !important;
+        border: 1px solid #C0C0C0 !important;
+    }
+    /* "Consult" (Filled gray style) */
+    .filled-button button {
+        background-color: #6D6D6D !important;
+        color: white !important;
+        border: none !important;
+    }
+
+    /* 6. Text Area & Input (Pill Shape) */
+    div.stTextArea textarea {
+        border-radius: 30px !important;
+        background-color: transparent !important;
+        border: 1.5px solid #DEDEDE !important;
+        padding: 10px 25px !important;
+        font-size: 14px;
+    }
+    div.stTextArea textarea:focus {
+        border-color: #6D6D6D !important;
+        box-shadow: none !important;
+    }
+    
+    /* 7. Chat Message Bubble Adjustments */
+    [data-testid="stChatMessage"] {
+        background: transparent !important;
+        border-bottom: 1px solid #F0F0F0;
+        border-radius: 0;
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------
-# 2. BRAND DATA (The "Brain's" Knowledge)
+# 2. THE WIDGET HEADER
 # -------------------------
-products = [
-    {
-        "name": "The Dewy Skin Cream", 
-        "price": "$72", 
-        "ingredients": "Japanese Purple Rice, Algae, Hyaluronic Acid",
-        "description": "A rich, plumping moisturizer for a healthy glow.",
-        "conflicts": "None. Pairs well with The Essence.",
-        "icon": "💜"
-    },
-    {
-        "name": "The Water Cream", 
-        "price": "$72", 
-        "ingredients": "Japanese Wild Rose, Japanese Leopard Lily",
-        "description": "Oil-free, pore-refining water cream.",
-        "conflicts": "None. Ideal for oily/combination skin.",
-        "icon": "💎"
-    },
-    {
-        "name": "The Rice Wash", 
-        "price": "$40", 
-        "ingredients": "Japanese Rice Powder, Hyaluronic Acid",
-        "description": "PH-neutral cream cleanser.",
-        "conflicts": "None.",
-        "icon": "☁️"
-    }
-]
+# Custom HTML/CSS to mimic the screenshot
+st.markdown("""
+<div class="chat-header">
+    <div style="width: 50px; height: 50px; background-color: #1200E4; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 24px;">👤</span>
+    </div>
+    <div class="header-text">
+        <h3>AI Concierge</h3>
+        <p>Here to help you shop</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # -------------------------
-# 3. GENIUS AI LOGIC
+# 3. CONVERSATION HUB (Hidden in Popover)
 # -------------------------
-def get_ai_response(user_query, history):
-    # Re-building the Deep Knowledge Base
-    context = "YOU ARE AN ELITE TATCHA SKINCARE CONSULTANT.\n\nPRODUCT KNOWLEDGE:\n"
-    for p in products:
-        context += f"- {p['name']} ({p['price']}): {p['description']}. Ingredients: {p['ingredients']}. Warnings: {p['conflicts']}\n"
+# To mimic that a user clicks to enter chat, we use a popover
+with st.popover("Open Chat Ritual", use_container_width=True):
+    st.subheader("Mindful Ritual Chat")
     
-    # Adding Sales Tactics & Multi-part handling
-    context += """
-    \nCORE DIRECTIVES:
-    1. VALIDATE: Start by acknowledging the user's specific skin concern.
-    2. EDUCATE: Explain the science of the recommended product.
-    3. UPSELL: Always suggest a complementary ritual step.
-    4. SAFETY: If they ask to mix incompatible products, warn them.
-    5. MULTI-PART: Answer every single question asked in the prompt.
-    """
-    
-    # Injecting History for Continuity
-    context += "\nCONVERSATION HISTORY:\n"
-    for msg in history:
-        context += f"{msg['role'].upper()}: {msg['content']}\n"
-    
-    context += f"\nNEW USER QUERY: {user_query}\n"
-
-    try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(context)
-        return response.text
-    except Exception as e:
-        return f"⚠️ I'm refining my notes (API Limit). Try again in 30s. Error: {str(e)}"
-
-# -------------------------
-# 4. TWO-COLUMN INTERFACE
-# -------------------------
-st.markdown("<h1 style='text-align: center; color: #1A1A1A;'>TATCHA</h1>", unsafe_allow_html=True)
-
-left_side, right_side = st.columns([1, 1.2], gap="large")
-
-with left_side:
-    st.subheader("Featured Rituals")
-    p_col1, p_col2 = st.columns(2)
-    for i, p in enumerate(products):
-        target = p_col1 if i % 2 == 0 else p_col2
-        with target:
-            st.markdown(f"""
-            <div class="product-box">
-                <div style="font-size: 35px;">{p['icon']}</div>
-                <div style="font-weight: 500;">{p['name']}</div>
-                <div class="price-tag">{p['price']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button(f"Consult on {p['name']}", key=f"btn_{i}", use_container_width=True):
-                if "messages" not in st.session_state: st.session_state.messages = []
-                st.session_state.messages.append({"role": "user", "content": f"Tell me about {p['name']}"})
-
-with right_side:
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    chat_display = st.container(height=500, border=True)
+    chat_box = st.container(height=350, border=False)
     
-    with chat_display:
+    with chat_box:
+        if not st.session_state.messages:
+            st.write("Share your concerns, and we shall guide you.")
         for msg in st.session_state.messages:
-            with st.chat_message(msg["role"], avatar="💜" if msg["role"] == "assistant" else None):
+            with st.chat_message(msg["role"], avatar="✨" if msg["role"] == "assistant" else None):
                 st.markdown(msg["content"])
 
-    if prompt := st.chat_input("How can I assist your ritual today?"):
-        # 1. User Message
+    # Processing AI Logic
+    def get_ai_response(query):
+        if not api_key: return "⚠️ API Key Missing."
+        context = f"TATCHA CONSULTANT: Users query is: {query}" # Your genius logic here
+        try:
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = model.generate_content(context)
+            return response.text
+        except:
+            return "⚠️ Quota reached. Please try in 30s."
+
+    # User Input Logic
+    if prompt := st.chat_input("Message your ritual consultant..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        # 2. Get Genius Response
-        with chat_display:
-            with st.chat_message("assistant", avatar="💜"):
-                with st.spinner("Consulting the archives..."):
-                    full_response = get_ai_response(prompt, st.session_state.messages[:-1])
-                    st.markdown(full_response)
-                    st.session_state.messages.append({"role": "assistant", "content": full_response})
+        with chat_box:
+            with st.chat_message("assistant", avatar="✨"):
+                with st.spinner("Consulting..."):
+                    answer = get_ai_response(prompt)
+                    st.markdown(answer)
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
         st.rerun()
+
+# -------------------------
+# 4. DATA & PRODUCT DISCOVERY
+# -------------------------
+# Configuration for Gemini AI (Keep your original code)
+api_key = os.environ.get("GOOGLE_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
+
+# The product we are showing in this "widget" example
+featured_product = {
+    "name": "The Dewy Skin Cream",
+    "price": "$72",
+    "ingredients": "Japanese Purple Rice, Algae, Hyaluronic Acid",
+    "description": "Rich hydration for a healthy glow."
+}
+
+# --- Centered Product Display ---
+# We use st.columns with wide side gaps to focus the product card in the center.
+left_gap, prod_card, right_gap = st.columns([0.3, 1, 0.3])
+
+with prod_card:
+    # 1. Product Icon (Mimicking that photo placeholder)
+    st.markdown(f"""
+    <div style="background-color: #EEE; height: 200px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-top: 30px;">
+        <span style="font-size: 80px;">💜</span>
+    </div>
+    <div class="product-details">
+        <p class="product-name">{featured_product['name']}</p>
+        <p class="product-price">{featured_product['price']}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. Buttons: Mimicking that outlined/filled combo from image
+    st.markdown("<div class='outline-button'>", unsafe_allow_html=True)
+    st.button("ⓘ  Learn More", key="learn_btn")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("<div class='filled-button'>", unsafe_allow_html=True)
+    st.button("✨  Consult on Ritual", key="consult_btn")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# -------------------------
+# 5. INPUT & LOADER (Pill Shaped)
+# -------------------------
+st.markdown("<h4 style='text-align: center; color: #BBB; font-weight: 300; margin-top: 20px;'>Ask your question:</h4>", unsafe_allow_html=True)
+user_query = st.text_area("Pill", key="quick_q", height=60, label_visibility="collapsed")
