@@ -8,7 +8,7 @@ from scrape_products import scrape_products
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
 model = genai.GenerativeModel("gemini-pro")
-
+st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
 # UI
 st.set_page_config(page_title="Love, Indus AI Assistant", page_icon="🛍️", layout="wide")
 st.title("🛍️ Love, Indus AI Sales Assistant")
