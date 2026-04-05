@@ -5,14 +5,11 @@ from scrape_products import scrape_products
 import google.generativeai as genai
 
 # -------------------------
-# Configure Gemini
+# Configure Gemini API
 # -------------------------
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
-# Use a supported model for text generation
-model = genai.GenerativeModel("text-bison-001")
-
-# Optional debug line to ensure API key loads
+# Optional debug: check if API key is loaded
 st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
 
 # -------------------------
@@ -33,13 +30,13 @@ quick_qs = [
 selected_q = st.sidebar.radio("Choose a question:", [""] + quick_qs)
 
 # -------------------------
-# Load Products
+# Load products
 # -------------------------
 with st.spinner("Fetching product info..."):
     products = scrape_products()
 
 # -------------------------
-# User Input
+# User input
 # -------------------------
 user_input = st.text_input("Ask your question or describe your skin concern:")
 if selected_q:
@@ -82,11 +79,15 @@ User query:
 Answer conversationally with recommendation and reasoning.
 """
     try:
-        # Use generate_text for Gemini
-        response = model.generate_text(prompt)
+        # Correct Gemini call using generate_text()
+        response = genai.generate_text(
+            model="text-bison-001",
+            prompt=prompt,
+            temperature=0.7,
+            max_output_tokens=500
+        )
         return response.text if response.text else "⚠️ No response generated."
     except Exception as e:
-        # Fallback message with actual error
         return f"""
 ⚠️ AI error occurred.
 
