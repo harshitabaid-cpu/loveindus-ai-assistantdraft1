@@ -2,101 +2,133 @@
 import streamlit as st
 import os
 import google.generativeai as genai
-from scrape_products import scrape_products # 🔗 Connecting your scraper!
 
 # -------------------------
-# Streamlit UI Setup
+# 1. High-Fidelity UI/UX Styling
 # -------------------------
-st.set_page_config(page_title="Clinical AI Assistant", page_icon="🧪", layout="wide")
-st.title("🧪 Clinical Skincare Expert & Sales Assistant")
-st.write("Expert advice, routine building, and safe ingredient pairing.")
+st.set_page_config(page_title="Luxe AI Consultant", page_icon="✨", layout="wide")
+
+st.markdown("""
+<style>
+    /* Main Background */
+    .stApp {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    
+    /* Clean Title Styling */
+    .main-title {
+        font-family: 'Helvetica Neue', sans-serif;
+        font-weight: 200;
+        color: #1a1a1a;
+        letter-spacing: 2px;
+        text-align: center;
+        padding-bottom: 20px;
+    }
+
+    /* Product Card Styling */
+    .product-holder {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        transition: transform 0.3s ease;
+        margin-bottom: 20px;
+    }
+    .product-holder:hover {
+        transform: translateY(-5px);
+    }
+
+    /* Assistant Message Styling */
+    .stChatMessage {
+        background-color: transparent !important;
+    }
+    
+    /* Sidebar aesthetic */
+    [data-testid="stSidebar"] {
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # -------------------------
-# Configure Gemini API
+# 2. Configuration & State
 # -------------------------
 api_key = os.environ.get("GOOGLE_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
-    st.sidebar.success("API KEY LOADED: YES")
-else:
-    st.sidebar.error("API KEY LOADED: NO. Please set your GOOGLE_API_KEY environment variable.")
+
+# Simulated Product Database
+products = [
+    {"name": "The Dewy Skin Cream", "price": "$72", "tag": "Hydrate", "desc": "Rich, plumping hydration.", "img": "💜"},
+    {"name": "The Water Cream", "price": "$72", "tag": "Clarify", "desc": "Pore-refining, oil-free hydration.", "img": "💎"},
+    {"name": "The Rice Wash", "price": "$40", "tag": "Cleanse", "desc": "Softening cream cleanser.", "img": "☁️"}
+]
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # -------------------------
-# Load products (With Caching!)
+# 3. Layout: Two-Column Interface
 # -------------------------
-# We use session_state so it only scrapes ONCE when you load the app
-with st.spinner("Fetching clinical data & conflict charts..."):
-    if "products" not in st.session_state:
-        st.session_state.products = scrape_products()
-    products = st.session_state.products
+st.markdown("<h1 class='main-title'>SKINCARE CONSULTANT </h1>", unsafe_allow_html=True)
 
-# -------------------------
-# Build Deep Product Context
-# -------------------------
-def get_product_context():
-    context = ""
+# Main container for the layout
+left_col, right_col = st.columns([1, 2], gap="large")
+
+# --- LEFT COLUMN: The Product Shelf ---
+with left_col:
+    st.subheader("Your Personalized Shelf")
     for p in products:
-        context += f"""
-Product: {p.get('name', 'Unknown')}
-Price: {p.get('price', 'N/A')}
-Description: {p.get('description', 'N/A')}
-Key Ingredients: {p.get('key_ingredients', 'N/A')}
-How to Use: {p.get('how_to_use', 'N/A')}
-Conflicts & Warnings: {p.get('conflicts', 'None listed')}
----
-"""
-    return context
+        with st.container():
+            st.markdown(f"""
+            <div class="product-holder">
+                <span style="font-size: 24px;">{p['img']}</span>
+                <span style="float: right; color: #888;">{p['tag']}</span>
+                <h4 style="margin: 10px 0 5px 0;">{p['name']}</h4>
+                <p style="color: #444; font-size: 14px;">{p['desc']}</p>
+                <strong style="font-size: 18px;">{p['price']}</strong>
+            </div>
+            """, unsafe_allow_html=True)
+            # Add a small button to "ask" about it specifically
+            if st.button(f"Ask about {p['name']}", key=p['name']):
+                st.session_state.temp_input = f"Tell me more about {p['name']}"
 
-# -------------------------
-# The "Genius" AI Logic
-# -------------------------
-def get_ai_response(query):
-    if not api_key:
-        return "⚠️ Please add your Google API Key to use the assistant."
-        
-    prompt = f"""
-You are an elite, highly knowledgeable Skincare Sales Consultant. 
+# --- RIGHT COLUMN: The Modern Chatroom ---
+with right_col:
+    chat_container = st.container(height=500, border=False)
+    
+    with chat_container:
+        # Initial greeting if chat is empty
+        if not st.session_state.messages:
+            st.chat_message("assistant", avatar="✨").write("Welcome back. How shall we refine your ritual today?")
 
-YOUR DATA SOURCE:
-{get_product_context()}
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"], avatar="✨" if message["role"] == "assistant" else "👤"):
+                st.markdown(message["content"])
 
-YOUR CORE DIRECTIVES:
-1. MULTI-TASKING: The user may ask multiple questions at once. Break down your response using clear bullet points or bold text to ensure NO part of their query is ignored.
-2. SAFETY & EXPERTISE FIRST: Always check the "Conflicts & Warnings" data. If a user asks about combining incompatible ingredients, strictly warn them and explain the science of why they shouldn't mix them.
-3. SALES PSYCHOLOGY (The Consultative Close):
-   - Acknowledge & Validate: Briefly validate their specific skin concern.
-   - Educate: Recommend a product and explain *why* the 'Key Ingredients' solve their problem.
-   - The Gentle Upsell: Always suggest a complementary product to build a routine (e.g., if recommending an exfoliator, suggest a hydrating serum for barrier support).
-   - Value Proposition: Casually mention the accessible 'Price' to eliminate cost objections.
-4. TONE: Clinical, deeply empathetic, highly professional, and persuasive but never "pushy".
+    # Input Logic
+    if prompt := st.chat_input("Message your consultant..."):
+        # Display user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with chat_container:
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt)
 
-USER QUERY:
-{query}
-"""
-    try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
-                temperature=0.7, # 0.7 keeps it creative for sales, but logical for science
-                max_output_tokens=800 # Increased so it has room to answer complex, multi-part questions
-            )
-        )
-        return response.text if response.text else "⚠️ No response generated."
-    except Exception as e:
-        return f"⚠️ AI error occurred: {str(e)}"
-
-# -------------------------
-# User Input & UI
-# -------------------------
-# Using a larger text area so users can type complex, multi-part questions
-user_input = st.text_area("Ask me multiple questions, ask about building a routine, or check ingredient conflicts:", height=100)
-
-if st.button("Consult Expert"):
-    if user_input:
-        with st.spinner("Analyzing formulation data and building response..."):
-            answer = get_ai_response(user_input)
-        st.markdown("### 🧪 Expert Consultation:")
-        st.info(answer)
-    else:
-        st.warning("Please type a question first.")
+        # Generate AI response
+        with chat_container:
+            with st.chat_message("assistant", avatar="✨"):
+                with st.spinner("Consulting archives..."):
+                    # Dummy response logic for UI testing
+                    def mock_ai(q):
+                        return f"The {q} ritual is designed to restore balance. Based on our clinical data, it would suit your profile perfectly."
+                    
+                    # Real AI call (uncomment when API quota is back)
+                    # model = genai.GenerativeModel("gemini-2.5-flash")
+                    # response = model.generate_content(prompt)
+                    # full_response = response.text
+                    
+                    full_response = mock_ai(prompt) 
+                    st.markdown(full_response)
+                    st.session_state.messages.append({"role": "assistant", "content": full_response})
