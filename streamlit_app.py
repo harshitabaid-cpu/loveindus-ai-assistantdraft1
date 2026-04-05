@@ -79,11 +79,16 @@ User query:
 Answer conversationally with recommendation and reasoning.
 """
     try:
-        # New Gemini call using TextGenerationModel
-        model = genai.TextGenerationModel.from_pretrained("text-bison-001")
-        response = model.predict(prompt, temperature=0.7, max_output_tokens=500)
+        # Correct Gemini call for v0.8.6
+        response = genai.generate_text(
+            model="text-bison-001",
+            prompt=prompt,
+            temperature=0.7,
+            max_output_tokens=500
+        )
         return response.text if response.text else "⚠️ No response generated."
     except Exception as e:
+        # Fallback with quick recommendations
         return f"""
 ⚠️ AI error occurred.
 
