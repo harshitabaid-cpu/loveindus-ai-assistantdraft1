@@ -4,117 +4,79 @@ import os
 import google.generativeai as genai
 
 # -------------------------
-# 1. LUXURY CSS INJECTION
+# 1. FLAGSHIP LUXURY CSS
 # -------------------------
-st.set_page_config(page_title="Tatcha AI Ritual", page_icon="💜", layout="centered")
+st.set_page_config(page_title="Tatcha Ritual Consultant", page_icon="💜", layout="wide")
 
 st.markdown("""
 <style>
-    /* Premium Font and Background */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-    
-    html, body, [class*="css"]  {
-        font-family: 'Inter', sans-serif;
-    }
-
+    /* Full Page Aesthetic */
     .stApp {
-        background: #FFFFFF;
+        background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), 
+                    url('https://www.tatcha.com/on/demandware.static/-/Library-Sites-TatchaSharedLibrary/default/dw4b2e1e32/images/hero/HP_Desktop_Hero.jpg');
+        background-size: cover;
     }
 
-    /* Product Card Grid */
-    .product-card {
-        border: 1px solid #EAEAEA;
-        border-radius: 4px;
-        padding: 15px;
+    /* Modern Floating Chat Container */
+    [data-testid="stVerticalBlock"] > div:has(div.chat-container) {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px);
+        border-radius: 30px;
+        padding: 30px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.5);
+    }
+
+    /* Product Cards - Luxury Minimalist */
+    .product-box {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
         text-align: center;
-        background: #FFF;
-        transition: all 0.3s ease;
+        border: 1px solid #F0F0F0;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .product-card:hover {
-        border-color: #613082; /* Tatcha Purple */
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-    }
-
-    /* Custom Chat Bubbles */
-    .stChatMessage {
-        border-radius: 15px !important;
-        padding: 10px !important;
+    .product-box:hover {
+        box-shadow: 0 15px 30px rgba(97, 48, 130, 0.1);
+        transform: scale(1.02);
+        border-color: #613082;
     }
 
-    /* Hide Streamlit Header/Footer for clean look */
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* Typography */
+    h1, h2, h3 { font-family: 'Playfair Display', serif; font-weight: 400 !important; color: #1A1A1A; }
+    .price-tag { color: #613082; font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 1px; }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------
-# 2. BRAND HEADER
+# 2. HERO SECTION
 # -------------------------
-st.markdown("<h2 style='text-align: center; color: #613082; font-weight: 300;'>TATCHA</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #888; font-size: 14px;'>Find your beginning. Discover your ritual.</p>", unsafe_allow_html=True)
-st.divider()
-
-# -------------------------
-# 3. INTERACTIVE PRODUCT SHELF
-# -------------------------
-# We use columns to show products as a "Quick Shop" bar
-p_cols = st.columns(3)
-
-products = [
-    {"name": "The Water Cream", "price": "$72", "icon": "💎"},
-    {"name": "The Dewy Skin", "price": "$72", "icon": "💜"},
-    {"name": "The Rice Wash", "price": "$40", "icon": "☁️"}
-]
-
-for i, p in enumerate(products):
-    with p_cols[i]:
-        st.markdown(f"""
-        <div class="product-card">
-            <div style="font-size: 30px; margin-bottom: 10px;">{p['icon']}</div>
-            <div style="font-weight: 600; font-size: 13px;">{p['name']}</div>
-            <div style="color: #613082; font-size: 12px;">{p['price']}</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button(f"Details", key=f"btn_{i}"):
-             st.session_state.messages.append({"role": "user", "content": f"Tell me about {p['name']}"})
-             # This triggers the AI in the next rerun
-
-st.write("") # Spacer
+st.markdown("<h1 style='text-align: center; font-size: 3.5rem; margin-bottom: 0;'>TATCHA</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; letter-spacing: 4px; color: #613082; text-transform: uppercase; font-size: 0.8rem; margin-bottom: 50px;'>The Beauty of Mindfulness</p>", unsafe_allow_html=True)
 
 # -------------------------
-# 4. THE CONVERSATION HUB
+# 3. DYNAMIC TWO-COLUMN LAYOUT
 # -------------------------
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+left_side, right_side = st.columns([1.2, 1], gap="large")
 
-# Create a clean, focused area for the chat
-chat_box = st.container(height=400, border=True)
-
-with chat_box:
-    if not st.session_state.messages:
-        st.markdown("<p style='text-align: center; color: #AAA; margin-top: 150px;'>Ask your consultant about your skin type or specific ingredients.</p>", unsafe_allow_html=True)
+with left_side:
+    st.markdown("### Curated for Your Ritual")
+    st.write("Our formulations are rooted in Hadasei-3™, a trinity of anti-aging Japanese superfoods.")
     
-    for message in st.session_state.messages:
-        avatar = "💜" if message["role"] == "assistant" else "👤"
-        with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message["content"])
-
-# -------------------------
-# 5. INPUT & LOGIC
-# -------------------------
-if prompt := st.chat_input("Message your ritual consultant..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    # Grid of Products
+    p_row1_col1, p_row1_col2 = st.columns(2)
     
-    # Rerunning manually to show the user message immediately in the box
-    st.rerun()
+    products = [
+        {"name": "The Dewy Skin Cream", "price": "$72", "icon": "💜", "label": "Rich Hydration"},
+        {"name": "The Water Cream", "price": "$72", "icon": "💎", "label": "Pore Refining"},
+        {"name": "The Rice Wash", "price": "$40", "icon": "☁️", "label": "Gentle Polish"},
+        {"name": "The Essence", "price": "$110", "icon": "✨", "label": "Resurfacing"}
+    ]
 
-# Processing logic (Triggered after a rerun if the last message is from user)
-if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
-    with chat_box:
-        with st.chat_message("assistant", avatar="💜"):
-            with st.spinner("Refining recommendations..."):
-                # Insert your get_ai_response() logic here
-                # For now, a placeholder for the quota-limited AI:
-                response = "In the tradition of Japanese beauty, we believe in purity. This formulation utilizes Hadasei-3 to restore a youthful glow. Shall I explain the application ritual?"
-                st.markdown(response)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+    # Displaying products in a 2x2 grid
+    for i, p in enumerate(products):
+        target_col = p_row1_col1 if i % 2 == 0 else p_row1_col2
+        with target_col:
+            st.markdown(f"""
+            <div class="product-box">
+                <div style="font-size: 40px; margin-bottom: 15px;">{p['icon']}</div>
