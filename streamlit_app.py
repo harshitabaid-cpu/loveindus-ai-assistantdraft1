@@ -7,7 +7,7 @@ from scrape_products import scrape_products
 # Configure Gemini
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
-model = genai.GenerativeModel("gemini-pro")
+model = genai.GenerativeModel("gemini-1.5-flash")
 st.write("API KEY LOADED:", "YES" if os.environ.get("GOOGLE_API_KEY") else "NO")
 # UI
 st.set_page_config(page_title="Love, Indus AI Assistant", page_icon="🛍️", layout="wide")
@@ -68,15 +68,22 @@ Answer conversationally with recommendation and reasoning.
 
     try:
         response = model.generate_content(prompt)
-        return response.text
-    except Exception:
-        return """
-⚠️ AI is temporarily unavailable.
+
+        if response and hasattr(response, "text") and response.text:
+            return response.text
+        else:
+            return "⚠️ No response generated. Try again."
+
+    except Exception as e:
+        return f"""
+⚠️ AI error occurred.
 
 Quick recommendations:
 - Glowing skin: Amrutini Luminosity Dewdrops
 - Dry skin: Hydrating oils/serums
 - Radiance: Vitamin C products
+
+(Error: {str(e)})
 """
 
 # Output
