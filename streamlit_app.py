@@ -1,90 +1,91 @@
 import streamlit as st
 import os
 import google.generativeai as genai
-from datetime import datetime
+from streamlit_js_eval import streamlit_js_eval
 
 # ---------------------------------------------------------
-# 1. BRAND ASSETS & GENIUS BRAIN CONFIG
+# 1. BRAIN CONFIG
 # ---------------------------------------------------------
 BRAND_NAME = "Tatcha"
-# Using a high-quality verified logo URL
-BRAND_LOGO = "https://www.tatcha.com/on/demandware.static/-/Library-Sites-TatchaSharedLibrary/default/dw106093d5/images/logo-black.png"
-ACCENT_COLOR = "#613082" 
-
 api_key = os.environ.get("GOOGLE_API_KEY")
 if api_key:
     genai.configure(api_key=api_key)
 
 # ---------------------------------------------------------
-# 2. DESIGN EXPERT CSS (Fixing Overlaps & Layout)
+# 2. DESIGN EXPERT CSS (1.5x FONT & ALIGNMENT)
 # ---------------------------------------------------------
 st.set_page_config(page_title=f"{BRAND_NAME} Concierge", layout="centered")
 
 st.markdown(f"""
 <style>
-    /* Global Widget Styling */
-    [data-testid="stVerticalBlock"] > div:has(div.rep-clone) {{
-        max-width: 450px;
+    /* Main Widget */
+    [data-testid="stVerticalBlock"] > div:has(div.luxury-widget) {{
+        max-width: 500px;
         background: white;
         border-radius: 20px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
         margin: auto;
         overflow: hidden;
-        border: 1px solid #F0F0F0;
+        border: 1px solid #EDEDED;
+        display: flex;
+        flex-direction: column;
     }}
 
-    /* FIXED HEADER: No overlapping */
+    /* HEADER: 1.5x FONT & NO LOGO */
     .rep-header {{
         background-color: #000000;
         color: white;
-        padding: 20px 25px;
+        padding: 30px 25px;
         display: flex;
         align-items: center;
-        justify-content: space-between; /* Keeps text left, icons right */
+        justify-content: space-between;
     }}
-    .header-left {{ display: flex; align-items: center; flex: 1; }}
-    .logo-container {{
-        width: 55px; height: 55px; 
-        background: white; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        margin-right: 15px; flex-shrink: 0;
+    .header-titles h3 {{ 
+        margin: 0; font-size: 33px !important; font-weight: 500; color: white; 
     }}
-    .header-text-group {{ display: flex; flex-direction: column; }}
-    .header-text-group h3 {{ 
-        margin: 0; font-size: 20px; font-weight: 500; color: white; line-height: 1.2;
+    .header-titles p {{ 
+        margin: 0; font-size: 21px !important; color: #AAA; font-weight: 300;
     }}
-    .header-text-group p {{ 
-        margin: 0; font-size: 14px; color: #AAA; font-weight: 300;
-    }}
-    .header-icons {{ display: flex; gap: 15px; opacity: 0.8; font-size: 18px; cursor: pointer; }}
+    .header-icons {{ display: flex; gap: 20px; font-size: 24px; cursor: pointer; }}
 
-    /* SUGGESTION CHIPS (Suggested Response Options) */
-    .chip-container {{
-        display: flex; flex-wrap: wrap; gap: 8px; padding: 15px 25px;
+    /* MESSAGE ALIGNMENT */
+    [data-testid="stChatMessage"]:has(div[data-testid="stChatMessageContent"] > div > p) {{
+        background: transparent !important;
+    }}
+    
+    /* User: Right Aligned, No Icon */
+    .st-emotion-cache-janm0z {{
+        flex-direction: row-reverse !important;
+        text-align: right !important;
+    }}
+    .st-emotion-cache-janm0z [data-testid="stChatMessageAvatar"] {{
+        display: none !important;
+    }}
+
+    /* Assistant: Left Aligned, Vector Icon */
+    .assistant-msg-text {{
+        font-size: 21px !important;
+        line-height: 1.5;
+    }}
+
+    /* SUGGESTED REPLIES (Bottom Most, Tight Spacing) */
+    .bottom-starters {{
+        padding: 5px 25px;
+        display: flex;
+        gap: 5px;
+        justify-content: flex-start;
     }}
     div.stButton > button {{
         border-radius: 20px !important;
-        border: 1px solid #E0E0E0 !important;
+        border: 1px solid #DDD !important;
         background: white !important;
-        color: #444 !important;
-        font-size: 13px !important;
-        transition: 0.2s;
-    }}
-    div.stButton > button:hover {{
-        border-color: {ACCENT_COLOR} !important;
-        color: {ACCENT_COLOR} !important;
+        padding: 4px 12px !important;
+        font-size: 18px !important;
     }}
 
-    /* CHAT BUBBLES */
-    [data-testid="stChatMessage"] {{
-        background: transparent !important;
-        padding: 10px 20px !important;
-    }}
-    .stChatInputContainer {{
-        border-radius: 30px !important;
-        background: #F4F4F7 !important;
-        border: 1px solid #E0E0E0 !important;
-        margin: 10px 20px 25px 20px !important;
+    /* INPUT BAR: 1.5x FONT */
+    .stChatInputContainer textarea {{
+        font-size: 21px !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -96,94 +97,78 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 def get_genius_reply(query, history):
-    context = f"""
-    Role: Elite {BRAND_NAME} Concierge.
-    Tone: Sophisticated, warm, mindful, Japanese-inspired.
-    Instructions: Give short, expert answers. Always mention the specific superfoods (Hadasei-3). 
-    IMPORTANT: End your response by offering two specific paths (e.g. 'Would you like to know the ritual or see the results?')
-    """
+    context = f"Role: Elite {BRAND_NAME} Concierge. Tone: Sophisticated. Instructions: Short expert answers. Mention Hadasei-3."
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
-        full_prompt = f"{context}\nHistory: {history}\nUser: {query}"
-        response = model.generate_content(full_prompt)
+        response = model.generate_content(f"{context}\nHistory: {history}\nUser: {query}")
         return response.text
-    except Exception:
-        return "I am currently refining our botanical archives. How may I assist your skin's journey today?"
+    except:
+        return "Our archives are refining. How may I assist your ritual?"
 
 # ---------------------------------------------------------
-# 4. THE WIDGET UI
+# 4. THE UI WIDGET
 # ---------------------------------------------------------
-st.markdown("<div class='rep-clone'>", unsafe_allow_html=True)
+st.markdown("<div class='luxury-widget'>", unsafe_allow_html=True)
 
 # HEADER
-st.markdown(f"""
-<div class="rep-header">
-    <div class="header-left">
-        <div class="logo-container">
-            <img src="{BRAND_LOGO}" width="35">
-        </div>
-        <div class="header-text-group">
+col_h1, col_h2 = st.columns([0.8, 0.2])
+with st.container():
+    st.markdown(f"""
+    <div class="rep-header">
+        <div class="header-titles">
             <h3>{BRAND_NAME} Concierge</h3>
             <p>Here to help you shop</p>
         </div>
-    </div>
-    <div class="header-icons">
-        <span>⤢</span>
-        <span onclick="window.location.reload()">✕</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# CHAT AREA
-chat_placeholder = st.container(height=450, border=False)
-
-with chat_placeholder:
-    if not st.session_state.messages:
-        # BRANDED WARM OPENING
-        st.markdown(f"""
-        <div style='padding: 20px; font-size: 17px; color: #333; font-family: serif;'>
-        Good afternoon. Welcome to {BRAND_NAME}. <br><br>
-        Find your beginning, and let us guide you. How shall we refine your ritual today?
+        <div class="header-icons">
+            <span id="expand-btn">⤢</span>
+            <span id="close-btn">✕</span>
         </div>
-        """, unsafe_allow_html=True)
-    
-    for m in st.session_state.messages:
-        avatar = BRAND_LOGO if m["role"] == "assistant" else None
-        with st.chat_message(m["role"], avatar=avatar):
-            st.markdown(m["content"])
+    </div>
+    """, unsafe_allow_html=True)
 
-# DYNAMIC SUGGESTION OPTIONS (Conversation Continuing)
-st.markdown("<div class='chip-container'>", unsafe_allow_html=True)
-cols = st.columns([1, 1, 1])
-if not st.session_state.messages:
-    if cols[0].button("💜 Dewy vs Water?"):
-        st.session_state.messages.append({"role": "user", "content": "What is the difference between Dewy and Water cream?"})
+# Functional Buttons using JS
+if st.button("✕", key="close_logic", help="Reset Ritual"):
+    st.session_state.messages = []
+    st.rerun()
+
+# CHAT HISTORY
+chat_area = st.container(height=400, border=False)
+with chat_area:
+    for m in st.session_state.messages:
+        role = m["role"]
+        if role == "user":
+            with st.chat_message("user", avatar=None):
+                st.markdown(f"<div style='font-size:21px;'>{m['content']}</div>", unsafe_allow_html=True)
+        else:
+            # Assistant with Vector Icon
+            with st.chat_message("assistant", avatar="✨"):
+                st.markdown(f"<div class='assistant-msg-text'>{m['content']}</div>", unsafe_allow_html=True)
+
+# SUGGESTED REPLIES (Pinned to bottom-most above input)
+st.markdown("<div class='bottom-starters'>", unsafe_allow_html=True)
+c1, c2, c3 = st.columns([1, 1, 1])
+with c1:
+    if st.button("💜 Dewy vs Water?"):
+        st.session_state.messages.append({"role": "user", "content": "Dewy vs Water Cream?"})
         st.rerun()
-    if cols[1].button("☁️ The Rice Wash?"):
-        st.session_state.messages.append({"role": "user", "content": "Tell me about the Rice Cleansing Ritual."})
+with c2:
+    if st.button("☁️ Rice Wash?"):
+        st.session_state.messages.append({"role": "user", "content": "Tell me about Rice Wash."})
         st.rerun()
-    if cols[2].button("✨ Hadasei-3?"):
-        st.session_state.messages.append({"role": "user", "content": "What is the Hadasei-3 complex?"})
-        st.rerun()
-else:
-    # Post-conversation chips to keep them shopping
-    if cols[0].button("🛍️ View Rituals"):
-        st.session_state.messages.append({"role": "user", "content": "Show me the full ritual sets."})
-        st.rerun()
-    if cols[1].button("🧴 Check Ingredients"):
-        st.session_state.messages.append({"role": "user", "content": "I want to see the key ingredients again."})
+with c3:
+    if st.button("✨ Hadasei-3?"):
+        st.session_state.messages.append({"role": "user", "content": "What is Hadasei-3?"})
         st.rerun()
 st.markdown("</div>", unsafe_allow_html=True)
 
 # INPUT BAR
 if prompt := st.chat_input("How may we assist your ritual today?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with chat_placeholder:
-        with st.chat_message("assistant", avatar=BRAND_LOGO):
-            with st.spinner("Consulting..."):
-                reply = get_genius_reply(prompt, st.session_state.messages[:-1])
-                st.markdown(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
+    with chat_area:
+        with st.chat_message("assistant", avatar="✨"):
+            reply = get_genius_reply(prompt, st.session_state.messages[:-1])
+            st.markdown(f"<div class='assistant-msg-text'>{reply}</div>", unsafe_allow_html=True)
+            st.session_state.messages.append({"role": "assistant", "content": reply})
     st.rerun()
 
 st.markdown("</div>", unsafe_allow_html=True)
