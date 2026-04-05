@@ -6,9 +6,9 @@ import google.generativeai as genai
 # -------------------------
 # Streamlit UI Setup (Must be first Streamlit command)
 # -------------------------
-st.set_page_config(page_title="Love, Indus AI Assistant", page_icon="🛍️", layout="wide")
-st.title("🛍️ Love, Indus AI Sales Assistant")
-st.write("Get personalized product recommendations and explanations for Love, Indus products!")
+st.set_page_config(page_title="Tatcha AI Assistant", page_icon="💜", layout="wide")
+st.title("💜 Tatcha AI Sales Assistant")
+st.write("Discover your ritual with personalized recommendations for Tatcha's Japanese botanical skincare!")
 
 # -------------------------
 # Configure Gemini API Safely
@@ -24,10 +24,10 @@ else:
 # Sidebar Quick Questions
 st.sidebar.header("Quick Questions")
 quick_qs = [
-    "Best product for glowing skin",
-    "Which product is suitable for dry skin?",
-    "Why is Amrutini Luminosity Dewdrops worth buying?",
-    "Explain Radiance Serum benefits"
+    "Difference between Water Cream and Dewy Skin Cream?",
+    "What is the best cleanser for dry skin?",
+    "What is Hadasei-3 and why is it important?",
+    "Which product is best for minimizing pores?"
 ]
 selected_q = st.sidebar.radio("Choose a question:", [""] + quick_qs)
 
@@ -36,14 +36,28 @@ selected_q = st.sidebar.radio("Choose a question:", [""] + quick_qs)
 # -------------------------
 # from scrape_products import scrape_products  <-- Commented out for now!
 with st.spinner("Fetching product info..."):
-    # Using dummy data to guarantee the app loads without hanging
+    # Using Tatcha dummy data to test the new brand persona
     products = [
         {
-            "name": "Amrutini Luminosity Dewdrops",
-            "price": "$135",
-            "description": "A hydrating serum that brings out your inner glow.",
-            "benefits": ["Glowing skin", "Hydration", "Plumping"],
-            "skin_type": ["All", "Dry"]
+            "name": "The Dewy Skin Cream",
+            "price": "$72.00",
+            "description": "A rich, moisturizing cream with plumping hydration and antioxidant-packed Japanese purple rice for a dewy, healthy glow.",
+            "benefits": ["Intense hydration", "Dewy glow", "Plumping", "Antioxidant protection"],
+            "skin_type": ["Dry", "Normal"]
+        },
+        {
+            "name": "The Water Cream",
+            "price": "$72.00",
+            "description": "An oil-free, clarifying water cream that releases a burst of hydrating nutrients and pore-refining Japanese wild rose.",
+            "benefits": ["Lightweight hydration", "Pore refining", "Balancing", "Shine control"],
+            "skin_type": ["Oily", "Combination"]
+        },
+        {
+            "name": "The Rice Wash",
+            "price": "$40.00",
+            "description": "A gently effective, cream cleanser that washes away impurities without stripping skin, leaving a luminous finish.",
+            "benefits": ["Gentle cleansing", "Softening", "Luminous finish", "pH balancing"],
+            "skin_type": ["All", "Dry", "Combination"]
         }
     ]
 
@@ -77,11 +91,13 @@ def get_ai_response(query):
         return "⚠️ Please add your Google API Key to use the assistant."
         
     prompt = f"""
-You are an expert Love, Indus skincare assistant.
+You are an expert, luxurious skincare assistant for Tatcha.
+
 Goals:
-- Recommend products based on user's skin type or concern
-- Explain product benefits
-- Use friendly, premium tone
+- Recommend products based on the user's skin type or concern.
+- Explain product benefits, highlighting Japanese botanicals where applicable.
+- Adopt a calm, educational, mindful, and premium tone.
+- Keep responses concise but highly informative.
 
 Product data:
 {get_product_context()}
@@ -106,7 +122,7 @@ User query:
 # Display AI answer
 # -------------------------
 if st.button("Get Recommendation") and user_input:
-    with st.spinner("Thinking..."):
+    with st.spinner("Consulting the ritual..."):
         answer = get_ai_response(user_input)
-    st.markdown("### 🤖 AI Assistant Says:")
+    st.markdown("### 💜 Tatcha Assistant Says:")
     st.info(answer)
