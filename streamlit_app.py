@@ -1,126 +1,137 @@
 import streamlit as st
-import os
-import google.generativeai as genai
 
 # -------------------------
-# 1. PAGE SETUP & CORE UI STYLING
+# 1. PAGE SETUP & CLONE CSS
 # -------------------------
-# We use 'centered' to constrain the app like a widget, not full width.
-st.set_page_config(page_title="Luxe Concierge", page_icon="✨", layout="centered")
+# 'centered' layout is key to constraining the width like a widget.
+st.set_page_config(page_title="AI Concierge", page_icon="✨", layout="centered")
 
-# --- CUSTOM CSS: Replicating the Screenshot & L'Oréal Aesthetic ---
+# --- ADVANCED CUSTOM CSS: The Clone ---
 st.markdown("""
 <style>
-    /* 1. Overall Background */
+    /* 1. Overall Background (Light Gray like image) */
     .stApp {
-        background: #F8F9FA;
+        background-color: #F9F9FB;
     }
     
-    /* 2. Constraining the app to feel like a widget */
-    div.block-container {
-        max-width: 500px;
+    /* 2. THE WIDGET CONTAINER (The Floating Box) */
+    /* We use unique selectors to target the main content block */
+    [data-testid="stVerticalBlock"] > div:has(div.concierge-widget) {
+        max-width: 400px; /* Constraining width like a phone screen */
         padding: 0;
-        border: 1px solid #EDEDED;
-        border-radius: 20px;
         background: white;
-        margin-top: 50px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-        overflow: hidden; /* Important for rounded corners */
+        border-radius: 30px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+        margin: 50px auto; /* Centers it on screen */
+        overflow: hidden; /* Ensures rounded corners on header */
+        border: 1px solid #EDEDED;
     }
 
-    /* 3. The Top Header Bar (from image) */
+    /* 3. THE HEADER (Dark Gray Bar from image) */
     .chat-header {
-        background-color: #6D6D6D; /* The specific dark gray from screenshot */
+        background-color: #6D6D6D; /* Exact dark gray */
         color: white;
-        padding: 20px 25px;
+        padding: 25px 25px;
         display: flex;
         align-items: center;
-        border-top-left-radius: 20px;
-        border-top-right-radius: 20px;
+        width: 100%;
     }
     .header-text {
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         margin-left: 15px;
     }
-    .header-text h3 { margin: 0; color: white; font-weight: 500; font-size: 18px; }
-    .header-text p { margin: 0; color: #EDEDED; font-size: 13px; font-weight: 300; }
+    .header-text h3 { margin: 0; color: white; font-weight: 500; font-size: 19px; }
+    .header-text p { margin: 0; color: #DEDEDE; font-size: 14px; font-weight: 300; }
 
-    /* 4. Product Card Styling (Minimalist) */
-    [data-testid="stColumn"] {
-        padding: 0 20px;
+    /* 4. THE PRODUCT AREA (Pure HTML Card) */
+    .product-card {
+        padding: 30px;
+        text-align: center;
+        background-color: white;
     }
-    .product-details {
-        text-align: left;
-        padding: 20px 0;
+    /* Large grey placeholder from image */
+    .product-image-placeholder {
+        background-color: #EEEEEE; 
+        height: 250px; 
+        border-radius: 10px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        margin-bottom: 25px;
+        font-size: 70px;
+        color: #AAA;
     }
+    /* Text styling from image */
     .product-name {
         font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 600;
-        font-size: 16px;
+        font-weight: 700;
+        font-size: 17px;
         color: #1A1A1A;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+        text-align: left;
     }
     .product-price {
-        font-size: 24px;
-        font-weight: 700;
+        font-family: 'Helvetica Neue', sans-serif;
+        font-size: 26px;
+        font-weight: 800;
         color: #1A1A1A;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
+        text-align: left;
     }
 
-    /* 5. Modern Button Styling (Rounded & Outline) */
-    .stButton > button {
-        width: 100%;
-        border-radius: 30px;
+    /* 5. BUTTON CLONING (Rounded) */
+    div.stButton > button {
+        width: 100% !important;
+        border-radius: 40px !important; /* Extremely rounded like image */
         font-weight: 400;
         text-transform: none;
         letter-spacing: normal;
-        margin-bottom: 10px;
+        height: 50px;
+        margin-bottom: 12px;
+        font-size: 16px;
     }
     /* "Learn More" (Outline style) */
     .outline-button button {
         background-color: white !important;
-        color: #1A1A1A !important;
-        border: 1px solid #C0C0C0 !important;
+        color: #333 !important;
+        border: 1.5px solid #C0C0C0 !important;
     }
-    /* "Consult" (Filled gray style) */
+    /* "Add to Cart" (Filled gray style) */
     .filled-button button {
         background-color: #6D6D6D !important;
         color: white !important;
         border: none !important;
     }
 
-    /* 6. Text Area & Input (Pill Shape) */
-    div.stTextArea textarea {
-        border-radius: 30px !important;
-        background-color: transparent !important;
-        border: 1.5px solid #DEDEDE !important;
-        padding: 10px 25px !important;
-        font-size: 14px;
+    /* 6. INPUT CLONING (The Pill shape at the bottom) */
+    /* Pinned chat input styling */
+    .stChatInputContainer {
+        border-radius: 40px !important;
+        padding: 10px 20px !important;
+        margin-bottom: 30px !important;
+        margin-top: 20px !important;
+        background-color: white !important;
+        border: 2px solid #DEDEDE !important;
     }
-    div.stTextArea textarea:focus {
+    .stChatInputContainer:focus-within {
         border-color: #6D6D6D !important;
-        box-shadow: none !important;
-    }
-    
-    /* 7. Chat Message Bubble Adjustments */
-    [data-testid="stChatMessage"] {
-        background: transparent !important;
-        border-bottom: 1px solid #F0F0F0;
-        border-radius: 0;
-        padding-top: 15px;
-        padding-bottom: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------
-# 2. THE WIDGET HEADER
+# 2. MARKER FOR WIDGET CONTAINER
 # -------------------------
-# Custom HTML/CSS to mimic the screenshot
+# We start the widget with a unique HTML class so our CSS can target it.
+st.markdown("<div class='concierge-widget'>", unsafe_allow_html=True)
+
+# -------------------------
+# 3. HEADER INJECTION
+# -------------------------
 st.markdown("""
 <div class="chat-header">
-    <div style="width: 50px; height: 50px; background-color: #1200E4; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-        <span style="font-size: 24px;">👤</span>
+    <div style="width: 55px; height: 55px; background-color: #1200E4; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <span style="color: white; font-size: 28px;">💙</span>
     </div>
     <div class="header-text">
         <h3>AI Concierge</h3>
@@ -130,89 +141,50 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------
-# 3. CONVERSATION HUB (Hidden in Popover)
+# 4. PRODUCT DISCOVERY (Pure HTML Card)
 # -------------------------
-# To mimic that a user clicks to enter chat, we use a popover
-with st.popover("Open Chat Ritual", use_container_width=True):
-    st.subheader("Mindful Ritual Chat")
-    
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-
-    chat_box = st.container(height=350, border=False)
-    
-    with chat_box:
-        if not st.session_state.messages:
-            st.write("Share your concerns, and we shall guide you.")
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"], avatar="✨" if msg["role"] == "assistant" else None):
-                st.markdown(msg["content"])
-
-    # Processing AI Logic
-    def get_ai_response(query):
-        if not api_key: return "⚠️ API Key Missing."
-        context = f"TATCHA CONSULTANT: Users query is: {query}" # Your genius logic here
-        try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            response = model.generate_content(context)
-            return response.text
-        except:
-            return "⚠️ Quota reached. Please try in 30s."
-
-    # User Input Logic
-    if prompt := st.chat_input("Message your ritual consultant..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with chat_box:
-            with st.chat_message("assistant", avatar="✨"):
-                with st.spinner("Consulting..."):
-                    answer = get_ai_response(prompt)
-                    st.markdown(answer)
-                    st.session_state.messages.append({"role": "assistant", "content": answer})
-        st.rerun()
-
-# -------------------------
-# 4. DATA & PRODUCT DISCOVERY
-# -------------------------
-# Configuration for Gemini AI (Keep your original code)
-api_key = os.environ.get("GOOGLE_API_KEY")
-if api_key:
-    genai.configure(api_key=api_key)
-
-# The product we are showing in this "widget" example
+# Simulated product data
 featured_product = {
-    "name": "The Dewy Skin Cream",
-    "price": "$72",
-    "ingredients": "Japanese Purple Rice, Algae, Hyaluronic Acid",
-    "description": "Rich hydration for a healthy glow."
+    "name": "Velvet :08 Broadway Bright Detox Mask",
+    "price": "$58",
 }
 
-# --- Centered Product Display ---
-# We use st.columns with wide side gaps to focus the product card in the center.
-left_gap, prod_card, right_gap = st.columns([0.3, 1, 0.3])
-
-with prod_card:
-    # 1. Product Icon (Mimicking that photo placeholder)
-    st.markdown(f"""
-    <div style="background-color: #EEE; height: 200px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-top: 30px;">
-        <span style="font-size: 80px;">💜</span>
+# Injecting the product visuals as pure HTML to replicate the exact format
+st.markdown(f"""
+<div class="product-card">
+    <div class="product-image-placeholder">
+        <span>📸</span>
     </div>
-    <div class="product-details">
-        <p class="product-name">{featured_product['name']}</p>
-        <p class="product-price">{featured_product['price']}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    <p class="product-name">{featured_product['name']}</p>
+    <p class="product-price">{featured_product['price']}</p>
+</div>
+""", unsafe_allow_html=True)
 
-    # 2. Buttons: Mimicking that outlined/filled combo from image
+# --- Button Clones (Rounded) ---
+# We use standard Streamlit buttons wrapped in a styled container
+btn_col_l, btn_col_c, btn_col_r = st.columns([0.1, 1, 0.1])
+with btn_col_c:
     st.markdown("<div class='outline-button'>", unsafe_allow_html=True)
-    st.button("ⓘ  Learn More", key="learn_btn")
+    st.button("ⓘ Learn more", key="learn_btn")
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div class='filled-button'>", unsafe_allow_html=True)
-    st.button("✨  Consult on Ritual", key="consult_btn")
+    # Using a cart icon placeholder
+    st.button("🛒 Add to cart", key="add_btn")
     st.markdown("</div>", unsafe_allow_html=True)
 
+st.write("") # Spacer
+
 # -------------------------
-# 5. INPUT & LOADER (Pill Shaped)
+# 5. INPUT & CONVERSATION (The Pill at the bottom)
 # -------------------------
-st.markdown("<h4 style='text-align: center; color: #BBB; font-weight: 300; margin-top: 20px;'>Ask your question:</h4>", unsafe_allow_html=True)
-user_query = st.text_area("Pill", key="quick_q", height=60, label_visibility="collapsed")
+# To make this a "same as the screenshot" visual test, we just show the pill.
+if prompt := st.chat_input("Type anything here..."):
+    # When your API is back, you'd trigger the Genius logic here.
+    with st.chat_message("user"):
+        st.write(prompt)
+    with st.chat_message("assistant"):
+        st.write("A refined choice. That formulation utilizes Hadasei-3™.")
+
+# Close the concierge widget container
+st.markdown("</div>", unsafe_allow_html=True)
